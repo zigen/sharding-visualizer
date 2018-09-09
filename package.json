@@ -21,6 +21,7 @@
     "webpack-dev-server": "^3.1.8"
   },
   "dependencies": {
-    "three": "^0.96.0"
+    "three": "^0.96.0",
+    "web3": "^1.0.0-beta.36"
   }
 }
