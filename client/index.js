@@ -44,10 +44,16 @@ const subscribeCameraControl = elem => {
   };
 };
 
+const setCameraToLatestBlock = () => {
+  const latestBlock = blocks[blocks.length - 1];
+  const { x, y, z } = latestBlock.cube.position;
+  camera.position.set(x, y, z + 5);
+  camera.up.set(x, y, z - 10);
+};
+
 const light = new THREE.DirectionalLight(0xffffff);
-light.position.x = 3;
-light.position.z = 5;
-light.position.y = 270;
+light.position.set(3, 1, 10);
+light.up.set(1, 1, 0);
 scene.add(light);
 
 const blocks = [];
@@ -66,12 +72,14 @@ const addLine = (b1, b2) => {
 const addBlock = block => {
   const parent = blocks.find(b => b.hash === block.parentHash);
   const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+  const color = "#" + block.hash.slice(2, 8);
+  const material = new THREE.MeshStandardMaterial({ color });
   const cube = new THREE.Mesh(geometry, material);
   cube.position.set(0, block.number * 2, 0);
   block.cube = cube;
   blocks.push(block);
   scene.add(cube);
+  setCameraToLatestBlock();
   if (parent != null) {
     addLine(block.cube, parent.cube);
     return;
@@ -79,7 +87,7 @@ const addBlock = block => {
 };
 
 const web3 = new Web3(
-  new Web3.providers.WebsocketProvider("ws://127.0.0.1:7545")
+  new Web3.providers.WebsocketProvider("ws://127.0.0.1:8546")
 );
 web3.eth.subscribe("newBlockHeaders", (err, block) => {
   console.log(block.hash, block.parentHash, block);
@@ -88,11 +96,11 @@ web3.eth.subscribe("newBlockHeaders", (err, block) => {
 setInterval(
   () =>
     web3.eth.sendTransaction({
-      from: "0x18b68c7ae1ec1ff23732d7191fdb1d6b07350770",
+      from: "0x99853e140a9f9f1e579c31d8b2f12336ac13f73b",
       to: "0xc825cc047b278791158ed511a558b868149596d0",
       value: 50000000000,
     }),
-  5000
+  2000
 );
 /*
 const addBlock = (x, y, z, parent) => {
