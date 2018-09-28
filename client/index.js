@@ -1,11 +1,17 @@
-import * as THREE from "three";
-import Web3 from "web3";
+import * as TWEEN from "@tweenjs/tween.js";
+import "../node_modules/three/examples/js/controls/OrbitControls";
+import "../node_modules/three/examples/js/renderers/CSS2DRenderer";
+import { BeaconChain, Validator, Shard } from "../core";
 
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-
 document.body.appendChild(renderer.domElement);
+const labelRenderer = new THREE.CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position = "absolute";
+labelRenderer.domElement.style.top = 0;
+document.body.appendChild(labelRenderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -13,36 +19,13 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-camera.position.z = 7;
-const subscribeCameraControl = elem => {
-  let clicked = false;
-  let prevMousePos = {};
-  let prevCameraPos = {};
-  elem.onmousedown = e => {
-    clicked = true;
-    prevMousePos = { x: e.clientX, y: e.clientY };
-    prevCameraPos = camera.position;
-  };
-  elem.onmousemove = e => {
-    if (clicked) {
-      camera.position.x =
-        (e.clientX - prevMousePos.x) * -0.001 + prevCameraPos.x;
-      camera.position.y =
-        (e.clientY - prevMousePos.y) * 0.001 + prevCameraPos.y;
-      if (blocks.length > 0) {
-        console.log(
-          "camera looks up to ",
-          blocks[blocks.length - 1].cube.position
-        );
-        camera.lookAt(blocks[blocks.length - 1].cube.position);
-      }
-    }
-  };
-  elem.onmouseup = e => {
-    clicked = false;
-    prevMousePos = {};
-  };
-};
+camera.position.z = 10;
+camera.position.x = 3;
+camera.lookAt(0, 0, 0);
+const controls = new THREE.OrbitControls(camera);
+
+const posSrc = camera.position;
+const tween = new TWEEN.Tween(posSrc).to({ x: 7, y: 8 }, 500);
 
 const setCameraToLatestBlock = () => {
   const latestBlock = blocks[blocks.length - 1];
@@ -56,8 +39,7 @@ light.position.set(3, 1, 10);
 light.up.set(1, 1, 0);
 scene.add(light);
 
-const blocks = [];
-const edges = [];
+/*
 const addLine = (b1, b2) => {
   const material = new THREE.LineBasicMaterial({
     color: 0xffffff,
@@ -68,73 +50,82 @@ const addLine = (b1, b2) => {
   edges.push(line);
   scene.add(line);
 };
+*/
 
-const addBlock = block => {
-  const parent = blocks.find(b => b.hash === block.parentHash);
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const color = "#" + block.hash.slice(2, 8);
-  const material = new THREE.MeshStandardMaterial({ color });
-  const cube = new THREE.Mesh(geometry, material);
-  cube.position.set(0, block.number * 2, 0);
-  block.cube = cube;
-  blocks.push(block);
-  scene.add(cube);
-  setCameraToLatestBlock();
-  if (parent != null) {
-    addLine(block.cube, parent.cube);
-    return;
-  }
-};
+scene.background = new THREE.Color("#333");
 
-const web3 = new Web3(
-  new Web3.providers.WebsocketProvider("ws://127.0.0.1:8546")
-);
-web3.eth.subscribe("newBlockHeaders", (err, block) => {
-  console.log(block.hash, block.parentHash, block);
-  addBlock(block);
-});
-setInterval(
-  () =>
-    web3.eth.sendTransaction({
-      from: "0x99853e140a9f9f1e579c31d8b2f12336ac13f73b",
-      to: "0xc825cc047b278791158ed511a558b868149596d0",
-      value: 50000000000,
-    }),
-  2000
-);
-/*
-const addBlock = (x, y, z, parent) => {
-  const height = blocks.length;
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+let blocks = [];
+const addCube = ({ id, x, y, z, color, val }) => {
+  const geometry = new THREE.BoxGeometry(val, val, val);
+  const material = new THREE.MeshStandardMaterial({
+    color: color || 0x00ff00,
+    opacity: 0.8,
+    transparent: true,
+  });
   const block = new THREE.Mesh(geometry, material);
   block.position.set(x, y, z);
   blocks.push(block);
+
+  const labelDiv = document.createElement("div");
+  labelDiv.className = "label";
+  labelDiv.textContent = id;
+  labelDiv.style.color = "white";
+  labelDiv.style.marginTop = "-1em";
+  labelDiv.style.fontSize = "0.7em";
+  const label = new THREE.CSS2DObject(labelDiv);
+  label.position.set(0, -0.25, 0.5);
+  block.add(label);
   scene.add(block);
-  if (parent != null) {
-    addLine(block, parent);
-    return;
-  }
-  if (height > 0) {
-    addLine(blocks[height], blocks[height - 1]);
-  }
+  block.name = id;
+  return block;
 };
 
-addBlock(0, 0, 0);
-addBlock(0, 2, 0);
-addBlock(0, 4, 0);
-addBlock(2, 4, 0, blocks[blocks.length - 2]);
-addBlock(2, 6, 0);
-*/
+const validators: Array<Validator> = [];
+const shards: Array<Shard> = [];
+for (let i = 0; i < 30; i++) {
+  validators.push(new Validator(i));
+}
+for (let i = 0; i < 5; i++) {
+  shards.push(new Shard(`shard-${i}`, i));
+}
 
+const beaconChain = new BeaconChain("beacon-chain", validators, shards);
+beaconChain.stateRecalc();
+
+let nodes = [];
+let links = [];
+let shardCubes = [];
+const validatorTweenGroup = new TWEEN.Group();
+
+nodes = nodes.concat(beaconChain.getNodes());
+nodes.forEach(n => {
+  const cube = addCube(n);
+  if (n.type === "shard") {
+    shardCubes.push(cube);
+  }
+  if (n.type === "validator") {
+    const { x, y, z, index, shard, slot } = n;
+    const shardCube = shardCubes.find(s => s.name === `shard-${shard}`);
+    const pos = shardCube.position.clone();
+    pos.y -= 1;
+    pos.z += slot * 2;
+    pos.x += index - 0.5;
+    new TWEEN.Tween(cube.position, validatorTweenGroup).to(pos, 500).start();
+  }
+});
+
+controls.update();
 const animate = () => {
   requestAnimationFrame(animate);
+  controls.update();
   renderer.render(scene, camera);
+  TWEEN.update();
+  validatorTweenGroup.update();
+  labelRenderer.render(scene, camera);
 };
+tween.start();
 
-subscribeCameraControl(renderer.domElement);
 animate();
 global.camera = camera;
 global.blocks = blocks;
 global.light = light;
-global.web3 = web3;

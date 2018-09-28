@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 module.exports = {
   mode: "development",
@@ -15,7 +16,7 @@ module.exports = {
         use: {
           loader: "babel-loader",
           options: {
-            presets: ["env"],
+            presets: ["@babel/preset-env", "@babel/preset-flow"],
           },
         },
       },
@@ -26,5 +27,11 @@ module.exports = {
     compress: true,
     port: 8080,
   },
-  plugins: [new HtmlWebpackPlugin()],
+  devtool: "source-map",
+  plugins: [
+    new HtmlWebpackPlugin(),
+    new webpack.ProvidePlugin({
+      THREE: "three",
+    }),
+  ],
 };

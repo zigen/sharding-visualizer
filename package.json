@@ -6,14 +6,19 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack-dev-server",
-    "fix": "prettier --trailing-comma es5 --write \"./**/*.js\" --ignore-path .lintignore "
+    "fix": "prettier --trailing-comma es5 --write \"./**/*.js\" --ignore-path .lintignore ",
+    "flow": "flow"
   },
   "author": "zigen <hrlclb@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-loader": "^7.1.5",
-    "babel-preset-env": "^1.7.0",
+    "@babel/core": "^7.1.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-flow": "^7.0.0",
+    "babel-loader": "^8.0.4",
+    "babel-preset-flow": "^6.23.0",
+    "flow-bin": "^0.81.0",
+    "flow-typed": "^2.5.1",
     "html-webpack-plugin": "^3.2.0",
     "prettier": "^1.14.2",
     "webpack": "^4.17.2",
@@ -21,6 +26,8 @@
     "webpack-dev-server": "^3.1.8"
   },
   "dependencies": {
+    "3d-force-graph": "^1.39.0",
+    "@tweenjs/tween.js": "^17.2.0",
     "three": "^0.96.0",
     "web3": "^1.0.0-beta.36"
   }
