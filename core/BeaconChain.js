@@ -7,6 +7,7 @@ import {
   BeaconBlock,
   Shard,
   CYCLE_LENGTH,
+  SLOT_HEIGHT,
 } from "./index";
 
 class BeaconChain implements Drawables {
@@ -142,7 +143,7 @@ class BeaconChain implements Drawables {
     const ctx = {
       x: 0,
       y: 0,
-      z: 0,
+      z: this.slot * SLOT_HEIGHT,
       recalculated: lastBlock.crystallizedState.lastStateRecalc === this.slot,
     };
     const blockNodes = this.blocks.map(b => b.getNode());

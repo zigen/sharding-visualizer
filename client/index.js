@@ -7,9 +7,10 @@ import {
   Shard,
   SHARD_COUNT,
   SLOT_HEIGHT,
+  VALIDATOR_COUNT,
 } from "../core";
 
-const DURATION = 3000;
+const DURATION = 1000;
 
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer();
@@ -94,7 +95,7 @@ const addCube = ({ id, x, y, z, color, val, opacity }) => {
 
 const validators: Array<Validator> = [];
 const shards: Array<Shard> = [];
-for (let i = 0; i < 30; i++) {
+for (let i = 0; i < VALIDATOR_COUNT; i++) {
   validators.push(new Validator(i));
 }
 for (let i = 0; i < SHARD_COUNT; i++) {
@@ -125,7 +126,7 @@ const updateNodes = () => {
 };
 const drawNodes = () => {
   nodes.forEach(n => {
-    if (n.shouldUpdate && n.slot != 0) {
+    if (n.shouldUpdate) {
       if (n.type === "validator") {
         const cube = validatorCubes.find(v => v.name === n.id);
         const { x, y, z, index, shard, slot } = n;
@@ -137,7 +138,9 @@ const drawNodes = () => {
         new TWEEN.Tween(cube.position, validatorTweenGroup)
           .to(pos, DURATION)
           .start();
+        cube.material.color = new THREE.Color(n.color);
         cube.userData.nextPos = pos;
+        return;
       }
     }
     if (n.drawn) {
@@ -208,7 +211,7 @@ let timer = setInterval(() => {
   if (count > 10) {
     clearInterval(timer);
   }
-}, DURATION);
+}, DURATION + 100);
 
 global.camera = camera;
 global.blocks = blocks;
