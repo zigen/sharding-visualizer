@@ -1,9 +1,13 @@
 // @flow
 
-import { Validator, Drawables, BeaconBlock, Shard } from "./index";
-import { CrystallizedState } from "./BeaconBlock";
-
-const CYCLE_LENGTH = 3;
+import {
+  Validator,
+  CrystallizedState,
+  Drawables,
+  BeaconBlock,
+  Shard,
+  CYCLE_LENGTH,
+} from "./index";
 
 class BeaconChain implements Drawables {
   validators: Array<Validator>;
@@ -23,12 +27,13 @@ class BeaconChain implements Drawables {
     this.cycle = 0;
   }
 
-  stateRecalc() {
+  stateRecalc(): BeaconBlock {
+    console.log("recalc!!!", this.slot);
     const shuffledValidators = this.shuffle().map((vsl, slot) =>
       vsl.map((vs, shard) =>
         vs.map((vi, index) => {
           const validator: Validator = this.getValidatorByIndex(vi);
-          const isProposer = shard === 0 && index === 0;
+          const isProposer = shard === 0 && index === slot % vs.length;
           validator.assignShardAndSlot(
             shard,
             slot + this.slot,
@@ -39,9 +44,42 @@ class BeaconChain implements Drawables {
         })
       )
     );
-    const cState = new CrystallizedState(shuffledValidators);
-    const block = this.blocks[this.blocks.length - 1];
+    const cState = new CrystallizedState(shuffledValidators, this.slot + 1);
+    const block = this.latestBlock;
     block.crystallizedState = cState;
+    return block;
+  }
+
+  get latestBlock() {
+    return this.blocks[this.blocks.length - 1];
+  }
+  proposeBlock(): BeaconBlock {
+    const nextSlot = this.slot + 1;
+    const nextCycle = Math.floor(nextSlot / CYCLE_LENGTH);
+    const lastBlock = this.latestBlock;
+    const block = new BeaconBlock(this.id + "-" + this.slot, nextSlot);
+    this.blocks.push(block);
+    if (this.cycle != nextCycle) {
+      this.stateRecalc();
+    } else {
+      block.crystallizedState = lastBlock.crystallizedState;
+    }
+    block.proposer = this.getProposer(this.slot);
+    this.slot = nextSlot;
+    this.cycle = nextCycle;
+    return block;
+  }
+
+  getProposer(slot: number): Validator {
+    let cState = null;
+    for (let i = this.blocks.length - 1; i > 0; i--) {
+      cState = this.blocks[i].crystallizedState;
+      if (cState != null) {
+        continue;
+      }
+    }
+    const committee = cState.getCommitteeForSlot(slot)[0];
+    return committee[slot % committee.length];
   }
 
   shuffle(): Array<Array<Array<number>>> {
@@ -100,7 +138,13 @@ class BeaconChain implements Drawables {
   }
 
   getNodes(): Array<any> {
-    const ctx = { x: 0, y: 0, z: 0 };
+    const lastBlock = this.latestBlock;
+    const ctx = {
+      x: 0,
+      y: 0,
+      z: 0,
+      recalculated: lastBlock.crystallizedState.lastStateRecalc === this.slot,
+    };
     const blockNodes = this.blocks.map(b => b.getNode());
     const shardNodes = this.shards.map((s, i) =>
       s.getNode(ctx, i, this.shards.length)

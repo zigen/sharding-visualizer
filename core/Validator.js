@@ -5,6 +5,7 @@ class Validator implements Drawable {
   id: string;
   index: number;
   assignments: Array<any>;
+  _node: any;
 
   constructor(index: number) {
     this.id = `validator-${index}`;
@@ -32,7 +33,7 @@ class Validator implements Drawable {
 
   getNode(ctx, _index) {
     const { slot, shard, index, actor } = this.latestAssignment;
-    return {
+    const node = {
       id: this.id,
       name: "Validator",
       val: 0.5,
@@ -44,7 +45,10 @@ class Validator implements Drawable {
       slot,
       shard,
       index,
+      shouldUpdate: ctx.recalculated,
     };
+    this._node = Object.assign({}, node);
+    return node;
   }
 }
 
