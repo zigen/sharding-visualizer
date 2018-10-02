@@ -45,6 +45,7 @@ class Validator implements Drawable {
       slot,
       shard,
       index,
+      actor,
       shouldUpdate: ctx.recalculated,
     };
     this._node = Object.assign({}, node);

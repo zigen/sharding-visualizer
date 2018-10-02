@@ -171,7 +171,7 @@ const drawNodes = () => {
           console.error(`validator cube ${n.id} is not found`);
           return;
         }
-        const { x, y, z, index, shard, slot } = n;
+        const { x, y, z, index, shard, slot, actor } = n;
         const shardCube = shardCubes.find(s => s.name === `shard-${shard}`);
         if (shardCube == null) {
           console.error(`shard cube ${shard} is not found`);
@@ -201,6 +201,7 @@ const drawNodes = () => {
           ...cube.userData,
           nextPos: pos,
           slot,
+          actor,
         };
         return;
       }
@@ -210,8 +211,8 @@ const drawNodes = () => {
     }
     if (n.type === "beacon" && n.proposer != null) {
       const { proposer } = n;
-      const pos = validatorCubes.find(v => v.name === proposer.id).userData
-        .nextPos;
+      const validator = validatorCubes.find(v => v.name === proposer.id);
+      const pos = validator.userData.nextPos;
       n.x = pos.x;
       n.y = pos.y - 0.5;
       n.z = pos.z;
@@ -230,7 +231,7 @@ const drawNodes = () => {
         cube.userData.nextPos = pos;
         addArrow(
           `propose-${n.height}`,
-          cube.position.clone(),
+          cube.position.clone().add(new THREE.Vector3(0, 0.5, 0)),
           Object.assign({}, pos)
         );
       }
@@ -251,7 +252,7 @@ const drawNodes = () => {
       };
     }
     if (n.type === "validator") {
-      const { x, y, z, index, shard, slot, id } = n;
+      const { x, y, z, index, shard, slot, id, actor } = n;
       const shardCube = shardCubes.find(s => s.name === `shard-${shard}`);
       const pos = shardCube.position.clone();
       pos.y -= 1;
@@ -268,6 +269,7 @@ const drawNodes = () => {
         shard,
         type: "validator",
         id,
+        actor,
       };
       validatorCubes.push(cube);
     }
