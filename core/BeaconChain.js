@@ -37,7 +37,7 @@ class BeaconChain implements Drawables {
           const isProposer = shard === 0 && index === slot % vs.length;
           validator.assignShardAndSlot(
             shard,
-            slot + this.slot,
+            slot + this.slot + 1,
             index,
             isProposer
           );
