@@ -134,7 +134,7 @@ const drawNodes = () => {
         }
         const pos = shardCube.position.clone();
         pos.y -= 1;
-        pos.z += slot * 2;
+        pos.z += slot * SLOT_HEIGHT;
         pos.x += index - 0.5;
 
         // add transparent cube
@@ -197,7 +197,7 @@ const drawNodes = () => {
       const shardCube = shardCubes.find(s => s.name === `shard-${shard}`);
       const pos = shardCube.position.clone();
       pos.y -= 1;
-      pos.z += slot * 2;
+      pos.z += slot * SLOT_HEIGHT;
       pos.x += index - 0.5;
 
       new TWEEN.Tween(cube.position, validatorTweenGroup)
