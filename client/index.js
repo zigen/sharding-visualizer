@@ -2,6 +2,7 @@
 import * as TWEEN from "@tweenjs/tween.js";
 import "../node_modules/three/examples/js/controls/OrbitControls";
 import "../node_modules/three/examples/js/renderers/CSS2DRenderer";
+import "../node_modules/three/examples/js/renderers/Projector";
 import {
   BeaconChain,
   Validator,
@@ -10,6 +11,8 @@ import {
   SLOT_HEIGHT,
   VALIDATOR_COUNT,
 } from "../core";
+
+import { initInformationPanel } from "../panel";
 
 const DURATION = 1000;
 
@@ -23,13 +26,17 @@ labelRenderer.domElement.style.position = "absolute";
 labelRenderer.domElement.style.top = 0;
 document.body.appendChild(labelRenderer.domElement);
 
+const root = document.createElement("div");
+document.body.appendChild(root);
+const store = initInformationPanel(root);
+
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
 );
-camera.position.z = 10;
+camera.position.z = 15;
 camera.position.x = 3;
 camera.lookAt(0, 0, 0);
 const controls = new THREE.OrbitControls(camera);
@@ -83,6 +90,43 @@ const addCube = ({ id, x, y, z, color, val, opacity }: Node) => {
   return block;
 };
 
+const addArrow = (
+  id,
+  source,
+  target,
+  offset,
+  color: string,
+  arrowLength: ?number
+) => {
+  const hex = color || 0xff0000;
+  const targetPos = convertToVector3(
+    (target.userData && target.userData.nextPos) || target.position || target
+  );
+  const sourcePos = convertToVector3(
+    (source.userData && source.userData.nextPos) || source.position || source
+  );
+  const dir = targetPos
+    .clone()
+    .sub(sourcePos)
+    .normalize();
+  let length = arrowLength || sourcePos.distanceTo(targetPos);
+  if (offset) {
+    targetPos.add(offset);
+    sourcePos.add(offset);
+  }
+  const arrow = new THREE.ArrowHelper(
+    dir,
+    sourcePos,
+    length,
+    hex,
+    length * 0.2,
+    0.08
+  );
+  arrow.name = id;
+  arrows.push(arrow);
+  scene.add(arrow);
+};
+
 const validators: Array<Validator> = [];
 const shards: Array<Shard> = [];
 for (let i = 0; i < VALIDATOR_COUNT; i++) {
@@ -119,6 +163,7 @@ const updateNodes = () => {
 
 const drawNodes = () => {
   nodes.forEach(n => {
+    // move cube which is already drawn
     if (n.shouldUpdate) {
       if (n.type === "validator") {
         const cube = validatorCubes.find(v => v.name === n.id);
@@ -139,19 +184,21 @@ const drawNodes = () => {
 
         // add transparent cube
         const cubePos = cube.position.clone();
-        addCube({
+        const c = addCube({
           ...cubePos,
           val: 0.5,
           opacity: 0.1,
           color: cube.material.color,
           //id: `${cube.name}-@${cube.userData.slot}`
         });
+        c.userData = { ...cube.userData };
 
         new TWEEN.Tween(cube.position, validatorTweenGroup)
           .to(pos, DURATION)
           .start();
         cube.material.color = new THREE.Color(n.color);
         cube.userData = {
+          ...cube.userData,
           nextPos: pos,
           slot,
         };
@@ -188,12 +235,23 @@ const drawNodes = () => {
         );
       }
       beaconCubes.push(cube);
+      cube.userData = {
+        ...cube.userData,
+        type: "beaconBlock",
+        id: cube.name,
+        height: n.height,
+        proposer: n.proposer,
+      };
     }
     if (n.type === "shard") {
       shardCubes.push(cube);
+      cube.userData = {
+        type: "shard",
+        id: cube.name,
+      };
     }
     if (n.type === "validator") {
-      const { x, y, z, index, shard, slot } = n;
+      const { x, y, z, index, shard, slot, id } = n;
       const shardCube = shardCubes.find(s => s.name === `shard-${shard}`);
       const pos = shardCube.position.clone();
       pos.y -= 1;
@@ -206,6 +264,10 @@ const drawNodes = () => {
       cube.userData = {
         nextPos: pos,
         slot,
+        index,
+        shard,
+        type: "validator",
+        id,
       };
       validatorCubes.push(cube);
     }
@@ -231,42 +293,6 @@ const convertToVector3 = v => {
     v = v.clone();
   }
   return v;
-};
-
-const addArrow = (
-  id,
-  source,
-  target,
-  offset,
-  color: string,
-  arrowLength: ?number
-) => {
-  const hex = color || 0xff0000;
-  const targetPos = convertToVector3(
-    (target.userData && target.userData.nextPos) || target.position || target
-  );
-  const sourcePos = convertToVector3(
-    (source.userData && source.userData.nextPos) || source.position || source
-  );
-  const dir = targetPos
-    .clone()
-    .sub(sourcePos)
-    .normalize();
-  let length = arrowLength || sourcePos.distanceTo(targetPos);
-  if (offset) {
-    targetPos.add(offset);
-    sourcePos.add(offset);
-  }
-  const arrow = new THREE.ArrowHelper(
-    dir,
-    sourcePos,
-    length,
-    hex,
-    length * 0.2,
-    0.08
-  );
-  arrow.name = id;
-  scene.add(arrow);
 };
 
 const drawLinks = () => {
@@ -325,3 +351,25 @@ global.blocks = blocks;
 global.light = light;
 global.validatorTweenGroup = validatorTweenGroup;
 global.beaconCubes = beaconCubes;
+global.THREE = THREE;
+const raycaster = new THREE.Raycaster();
+window.addEventListener("mousedown", e => {
+  if (e.target === labelRenderer.domElement) {
+    const mouse = new THREE.Vector2();
+    mouse.x = (e.clientX / renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = -(e.clientY / renderer.domElement.clientHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(blocks, true);
+    if (intersects.length > 0) {
+      const target = intersects[0].object;
+      store.dispatch({
+        type: "nodes/SELECT",
+        payload: {
+          ...target.userData,
+          nodeId: target.uuid,
+          nodeName: target.name,
+        },
+      });
+    }
+  }
+});

@@ -29,7 +29,14 @@
   },
   "dependencies": {
     "3d-force-graph": "^1.39.0",
+    "@babel/preset-react": "^7.0.0",
     "@tweenjs/tween.js": "^17.2.0",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2",
+    "react-redux": "^5.0.7",
+    "redux": "^4.0.0",
+    "redux-actions": "^2.6.1",
+    "styled-jsx": "^3.1.0",
     "three": "^0.96.0",
     "web3": "^1.0.0-beta.36"
   }
