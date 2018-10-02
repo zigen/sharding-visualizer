@@ -9,12 +9,14 @@ class BeaconBlock {
   height: number;
   isGenesis: boolean;
   proposer: Validator;
+  parent: ?BeaconBlock;
 
-  constructor(id: string, height: number) {
+  constructor(id: string, height: number, parent: ?BeaconBlock = null) {
     this.id = id;
     this.height = height;
     this.isGenesis = height === 0;
     this.crystallizedState = null;
+    this.parent = parent;
   }
 
   get isProposed() {

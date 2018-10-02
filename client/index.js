@@ -36,13 +36,6 @@ const controls = new THREE.OrbitControls(camera);
 const posSrc = camera.position;
 const tween = new TWEEN.Tween(posSrc).to(posSrc, DURATION);
 
-const setCameraToLatestBlock = () => {
-  const latestBlock = blocks[blocks.length - 1];
-  const { x, y, z } = latestBlock.cube.position;
-  camera.position.set(x, y, z + 5);
-  camera.up.set(x, y, z - 10);
-};
-
 const light = new THREE.DirectionalLight(0xffffff);
 light.position.set(3, 1, 10);
 light.up.set(1, 1, 0);
@@ -51,19 +44,6 @@ const light2 = new THREE.DirectionalLight(0xffffff);
 light2.position.set(3, 9, 10);
 light2.up.set(4, 1, 0);
 scene.add(light2);
-
-/*
-const addLine = (b1, b2) => {
-  const material = new THREE.LineBasicMaterial({
-    color: 0xffffff,
-  });
-  const geometry = new THREE.Geometry();
-  geometry.vertices.push(b1.position, b2.position);
-  const line = new THREE.Line(geometry, material);
-  edges.push(line);
-  scene.add(line);
-};
-*/
 
 scene.background = new THREE.Color("#333");
 
@@ -109,6 +89,8 @@ let nodes = [];
 let links = [];
 let shardCubes = [];
 let validatorCubes = [];
+let beaconCubes = [];
+let arrows = [];
 const validatorTweenGroup = new TWEEN.Group();
 const beaconTweenGroup = new TWEEN.Group();
 
@@ -124,6 +106,7 @@ const updateNodes = () => {
   });
   nodes = nodes.concat(newNodes);
 };
+
 const drawNodes = () => {
   nodes.forEach(n => {
     if (n.shouldUpdate) {
@@ -155,16 +138,19 @@ const drawNodes = () => {
       n.z = pos.z;
     }
     const cube = addCube(n);
-    if (n.type === "beacon" && n.proposer != null) {
-      const pos = {
-        x: 0,
-        y: 0,
-        z: n.height * SLOT_HEIGHT,
-      };
-      new TWEEN.Tween(cube.position, beaconTweenGroup)
-        .to(pos, DURATION)
-        .start();
-      cube.userData.nextPos = pos;
+    if (n.type === "beacon") {
+      if (n.proposer != null) {
+        const pos = {
+          x: 0,
+          y: 0,
+          z: n.height * SLOT_HEIGHT,
+        };
+        new TWEEN.Tween(cube.position, beaconTweenGroup)
+          .to(pos, DURATION)
+          .start();
+        cube.userData.nextPos = pos;
+      }
+      beaconCubes.push(cube);
     }
     if (n.type === "shard") {
       shardCubes.push(cube);
@@ -188,8 +174,71 @@ const drawNodes = () => {
   controls.update();
 };
 
-updateNodes();
-drawNodes();
+const updateLinks = () => {
+  const allLinks = beaconChain.getLinks();
+  const newLinks = allLinks.filter(
+    l1 => links.find(l2 => l2.id === l1.id) == null
+  );
+  links = links.concat(newLinks);
+};
+
+const convertToVector3 = v => {
+  if (!(v instanceof THREE.Vector3)) {
+    const { x, y, z } = v;
+    v = new THREE.Vector3(x, y, z);
+  } else {
+    v = v.clone();
+  }
+  return v;
+};
+
+const addArrow = (id, source, target, offset) => {
+  const length = 1.5;
+  const hex = 0xffff00;
+  const targetPos = convertToVector3(
+    target.userData.nextPos || target.position
+  );
+  const sourcePos = convertToVector3(
+    source.userData.nextPos || source.position
+  );
+  targetPos.add(offset);
+  sourcePos.add(offset);
+  const dir = targetPos
+    .clone()
+    .sub(sourcePos)
+    .normalize();
+  const arrow = new THREE.ArrowHelper(
+    dir,
+    sourcePos,
+    length,
+    hex,
+    length * 0.2,
+    0.08
+  );
+  arrow.name = id;
+  scene.add(arrow);
+};
+
+const drawLinks = () => {
+  links.forEach(l => {
+    const { source, target, type, id } = l;
+    if (type === "beacon") {
+      const sourceCube = beaconCubes.find(c => c.name === source);
+      const targetCube = beaconCubes.find(c => c.name === target);
+      if (sourceCube != null && targetCube != null) {
+        addArrow(id, sourceCube, targetCube, new THREE.Vector3(0, 0, -0.5));
+      }
+    }
+  });
+};
+
+const render = () => {
+  updateNodes();
+  updateLinks();
+  drawNodes();
+  drawLinks();
+};
+
 const animate = () => {
   requestAnimationFrame(animate);
   controls.update();
@@ -199,14 +248,15 @@ const animate = () => {
   beaconTweenGroup.update();
   labelRenderer.render(scene, camera);
 };
+
+render();
 tween.start();
 animate();
 
 let count = 0;
 let timer = setInterval(() => {
   beaconChain.proposeBlock();
-  updateNodes();
-  drawNodes();
+  render();
   count++;
   if (count > 10) {
     clearInterval(timer);

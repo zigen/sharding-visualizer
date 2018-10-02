@@ -54,11 +54,16 @@ class BeaconChain implements Drawables {
   get latestBlock() {
     return this.blocks[this.blocks.length - 1];
   }
+
   proposeBlock(): BeaconBlock {
     const nextSlot = this.slot + 1;
     const nextCycle = Math.floor(nextSlot / CYCLE_LENGTH);
     const lastBlock = this.latestBlock;
-    const block = new BeaconBlock(this.id + "-" + this.slot, nextSlot);
+    const block = new BeaconBlock(
+      this.id + "-" + this.slot,
+      nextSlot,
+      lastBlock
+    );
     this.blocks.push(block);
     if (this.cycle != nextCycle) {
       this.stateRecalc();
@@ -156,11 +161,19 @@ class BeaconChain implements Drawables {
   }
 
   getLinks() {
+    return this.blocks.filter(b => b.parent != null).map(b => ({
+      target: b.parent.id,
+      source: b.id,
+      id: b.parent.id + "-" + b.id,
+      type: "beacon",
+    }));
+    /*
     const unassignedValidators = this.validators.filter(v => !v.isAssigned());
     return unassignedValidators.map((v, i) => ({
       source: this.id,
       target: v.id,
     }));
+    */
   }
 }
 
