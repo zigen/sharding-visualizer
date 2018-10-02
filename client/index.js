@@ -1,3 +1,4 @@
+// @flow
 import * as TWEEN from "@tweenjs/tween.js";
 import "../node_modules/three/examples/js/controls/OrbitControls";
 import "../node_modules/three/examples/js/renderers/CSS2DRenderer";
@@ -41,14 +42,23 @@ light.position.set(3, 1, 10);
 light.up.set(1, 1, 0);
 scene.add(light);
 const light2 = new THREE.DirectionalLight(0xffffff);
-light2.position.set(3, 9, 10);
+light2.position.set(-3, 9, -10);
 light2.up.set(4, 1, 0);
 scene.add(light2);
 
 scene.background = new THREE.Color("#333");
 
 let blocks = [];
-const addCube = ({ id, x, y, z, color, val, opacity }) => {
+type Node = {
+  id: string,
+  x: number,
+  y: number,
+  z: number,
+  color: ?string,
+  val: number,
+  opacity: ?number,
+};
+const addCube = ({ id, x, y, z, color, val, opacity }: Node) => {
   const geometry = new THREE.BoxGeometry(val, val, val);
   const material = new THREE.MeshStandardMaterial({
     color: color || 0x00ff00,
@@ -112,17 +122,39 @@ const drawNodes = () => {
     if (n.shouldUpdate) {
       if (n.type === "validator") {
         const cube = validatorCubes.find(v => v.name === n.id);
+        if (cube == null) {
+          console.error(`validator cube ${n.id} is not found`);
+          return;
+        }
         const { x, y, z, index, shard, slot } = n;
         const shardCube = shardCubes.find(s => s.name === `shard-${shard}`);
+        if (shardCube == null) {
+          console.error(`shard cube ${shard} is not found`);
+          return;
+        }
         const pos = shardCube.position.clone();
         pos.y -= 1;
         pos.z += slot * 2;
         pos.x += index - 0.5;
+
+        // add transparent cube
+        const cubePos = cube.position.clone();
+        addCube({
+          ...cubePos,
+          val: 0.5,
+          opacity: 0.1,
+          color: cube.material.color,
+          //id: `${cube.name}-@${cube.userData.slot}`
+        });
+
         new TWEEN.Tween(cube.position, validatorTweenGroup)
           .to(pos, DURATION)
           .start();
         cube.material.color = new THREE.Color(n.color);
-        cube.userData.nextPos = pos;
+        cube.userData = {
+          nextPos: pos,
+          slot,
+        };
         return;
       }
     }
@@ -149,6 +181,11 @@ const drawNodes = () => {
           .to(pos, DURATION)
           .start();
         cube.userData.nextPos = pos;
+        addArrow(
+          `propose-${n.height}`,
+          cube.position.clone(),
+          Object.assign({}, pos)
+        );
       }
       beaconCubes.push(cube);
     }
@@ -162,10 +199,14 @@ const drawNodes = () => {
       pos.y -= 1;
       pos.z += slot * 2;
       pos.x += index - 0.5;
+
       new TWEEN.Tween(cube.position, validatorTweenGroup)
         .to(pos, DURATION)
         .start();
-      cube.userData.nextPos = pos;
+      cube.userData = {
+        nextPos: pos,
+        slot,
+      };
       validatorCubes.push(cube);
     }
 
@@ -192,21 +233,30 @@ const convertToVector3 = v => {
   return v;
 };
 
-const addArrow = (id, source, target, offset) => {
-  const length = 1.5;
-  const hex = 0xffff00;
+const addArrow = (
+  id,
+  source,
+  target,
+  offset,
+  color: string,
+  arrowLength: ?number
+) => {
+  const hex = color || 0xff0000;
   const targetPos = convertToVector3(
-    target.userData.nextPos || target.position
+    (target.userData && target.userData.nextPos) || target.position || target
   );
   const sourcePos = convertToVector3(
-    source.userData.nextPos || source.position
+    (source.userData && source.userData.nextPos) || source.position || source
   );
-  targetPos.add(offset);
-  sourcePos.add(offset);
   const dir = targetPos
     .clone()
     .sub(sourcePos)
     .normalize();
+  let length = arrowLength || sourcePos.distanceTo(targetPos);
+  if (offset) {
+    targetPos.add(offset);
+    sourcePos.add(offset);
+  }
   const arrow = new THREE.ArrowHelper(
     dir,
     sourcePos,
@@ -226,7 +276,14 @@ const drawLinks = () => {
       const sourceCube = beaconCubes.find(c => c.name === source);
       const targetCube = beaconCubes.find(c => c.name === target);
       if (sourceCube != null && targetCube != null) {
-        addArrow(id, sourceCube, targetCube, new THREE.Vector3(0, 0, -0.5));
+        addArrow(
+          id,
+          sourceCube,
+          targetCube,
+          new THREE.Vector3(0, 0, -0.5),
+          "#ffff00",
+          1
+        );
       }
     }
   });
@@ -267,3 +324,4 @@ global.camera = camera;
 global.blocks = blocks;
 global.light = light;
 global.validatorTweenGroup = validatorTweenGroup;
+global.beaconCubes = beaconCubes;
