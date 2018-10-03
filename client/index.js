@@ -213,7 +213,10 @@ const drawNodes = () => {
     if (n.type === "beacon" && n.proposer != null) {
       const { proposer } = n;
       const validator = validatorCubes.find(
-        v => v.name === proposer.id && v.userData.slot == n.height
+        v =>
+          v.name === proposer.id &&
+          v.userData.slot == n.height &&
+          v.userData.actor === "proposer"
       );
       if (validator != null) {
         const pos = validator.userData.nextPos;

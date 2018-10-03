@@ -57,7 +57,7 @@ class BeaconChain implements Drawables {
 
   proposeBlock(): BeaconBlock {
     const nextSlot = this.slot + 1;
-    const nextCycle = Math.floor(nextSlot / CYCLE_LENGTH);
+    const nextCycle = Math.floor(this.slot / CYCLE_LENGTH);
     const lastBlock = this.latestBlock;
     const block = new BeaconBlock(
       this.id + "-" + this.slot,
@@ -81,7 +81,7 @@ class BeaconChain implements Drawables {
     for (let i = this.blocks.length - 1; i > 0; i--) {
       cState = this.blocks[i].crystallizedState;
       if (cState != null) {
-        continue;
+        break;
       }
     }
     const committee = cState.getCommitteeForSlot(slot)[0];
