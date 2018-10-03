@@ -372,6 +372,9 @@ window.addEventListener("mousedown", e => {
           nodeName: target.name,
         },
       });
+      if (target.userData.type === "beaconBlock") {
+        new TWEEN.Tween(controls.target).to(target.position, 500).start();
+      }
     }
   }
 });
