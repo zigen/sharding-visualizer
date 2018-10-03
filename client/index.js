@@ -189,9 +189,10 @@ const drawNodes = () => {
           val: 0.5,
           opacity: 0.1,
           color: cube.material.color,
-          //id: `${cube.name}-@${cube.userData.slot}`
+          id: cube.name.replace("validator-", ""),
         });
         c.userData = { ...cube.userData };
+        validatorCubes.push(c);
 
         new TWEEN.Tween(cube.position, validatorTweenGroup)
           .to(pos, DURATION)
@@ -211,11 +212,15 @@ const drawNodes = () => {
     }
     if (n.type === "beacon" && n.proposer != null) {
       const { proposer } = n;
-      const validator = validatorCubes.find(v => v.name === proposer.id);
-      const pos = validator.userData.nextPos;
-      n.x = pos.x;
-      n.y = pos.y - 0.5;
-      n.z = pos.z;
+      const validator = validatorCubes.find(
+        v => v.name === proposer.id && v.userData.slot == n.height
+      );
+      if (validator != null) {
+        const pos = validator.userData.nextPos;
+        n.x = pos.x;
+        n.y = pos.y - 0.5;
+        n.z = pos.z;
+      }
     }
     const cube = addCube(n);
     if (n.type === "beacon") {

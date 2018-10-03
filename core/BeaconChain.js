@@ -155,8 +155,8 @@ class BeaconChain implements Drawables {
     const shardNodes = this.shards.map((s, i) =>
       s.getNode(ctx, i, this.shards.length)
     );
-    return blockNodes
-      .concat(shardNodes)
+    return shardNodes
+      .concat(blockNodes)
       .concat(this.validators.map((v, i) => v.getNode(ctx, i)));
   }
 
