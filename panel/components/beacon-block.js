@@ -14,7 +14,7 @@ class BeaconBlock extends React.Component<Props> {
         <div>type: {type}</div>
         <div>id: {id}</div>
         <div>slot: {slot}</div>
-        <div>proposer: {proposer.id}</div>
+        <div>proposer: {proposer != null ? proposer.id : "genesis"}</div>
       </div>
     );
   }

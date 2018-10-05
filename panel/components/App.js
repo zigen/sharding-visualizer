@@ -26,6 +26,15 @@ const App = () => {
           margin: 0;
           padding: 0;
         }
+
+        .label-hide {
+          display: none;
+        }
+
+        .label-show {
+          color: white;
+          font-size: 0.7rem;
+        }
       `}</style>
     </div>
   );
