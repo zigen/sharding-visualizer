@@ -10,7 +10,6 @@ import { Validator } from "./Validator";
 import { PoWChain } from "./PoWChain";
 import { PoWBlock } from "./PoWBlock";
 import { Shard } from "./Shard";
-import { Drawable, Drawables } from "./Drawable";
 
 export const CYCLE_LENGTH = 4; // 64slots
 export const SHARD_COUNT = 6;
@@ -29,7 +28,5 @@ export {
   ActiveState,
   CrystallizedState,
   Attestation,
-  Drawable,
-  Drawables,
   Shard,
 };

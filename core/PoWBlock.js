@@ -1,7 +1,6 @@
 // @flow
-import { Drawable } from "./Drawable";
 let index = 0;
-class PoWBlock implements Drawable {
+class PoWBlock {
   id: string;
   height: number;
   parent: ?PoWBlock;

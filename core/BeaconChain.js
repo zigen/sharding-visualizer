@@ -3,14 +3,13 @@
 import {
   Validator,
   CrystallizedState,
-  Drawables,
   BeaconBlock,
   Shard,
   CYCLE_LENGTH,
   SLOT_HEIGHT,
 } from "./index";
 
-class BeaconChain implements Drawables {
+class BeaconChain {
   validators: Array<Validator>;
   id: string;
   blocks: Array<BeaconBlock>;
