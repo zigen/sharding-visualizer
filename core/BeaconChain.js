@@ -3,14 +3,13 @@
 import {
   Validator,
   CrystallizedState,
-  Drawables,
   BeaconBlock,
   Shard,
   CYCLE_LENGTH,
   SLOT_HEIGHT,
 } from "./index";
 
-class BeaconChain implements Drawables {
+class BeaconChain {
   validators: Array<Validator>;
   id: string;
   blocks: Array<BeaconBlock>;
@@ -152,8 +151,9 @@ class BeaconChain implements Drawables {
       recalculated: lastBlock.crystallizedState.lastStateRecalc === this.slot,
     };
     const blockNodes = this.blocks.map(b => b.getNode());
-    const shardNodes = this.shards.map((s, i) =>
-      s.getNode(ctx, i, this.shards.length)
+    const shardNodes = this.shards.reduce(
+      (acc, s, i) => acc.concat(s.getNode(ctx, i, this.shards.length)),
+      []
     );
     return shardNodes
       .concat(blockNodes)
@@ -161,12 +161,18 @@ class BeaconChain implements Drawables {
   }
 
   getLinks() {
-    return this.blocks.filter(b => b.parent != null).map(b => ({
+    const beaconLinks = this.blocks.filter(b => b.parent != null).map(b => ({
       target: b.parent.id,
       source: b.id,
       id: b.parent.id + "-" + b.id,
       type: "beacon",
     }));
+    const shardLinks = this.shards.reduce(
+      (acc, s) => acc.concat(s.getLinks()),
+      []
+    );
+    return beaconLinks.concat(shardLinks);
+
     /*
     const unassignedValidators = this.validators.filter(v => !v.isAssigned());
     return unassignedValidators.map((v, i) => ({

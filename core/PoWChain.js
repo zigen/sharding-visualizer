@@ -1,7 +1,7 @@
 // @flow
-import { PoWBlock, Drawables } from "./";
+import { PoWBlock } from "./";
 
-class PoWChain implements Drawables {
+class PoWChain {
   blocks: Array<PoWBlock>;
   id: string;
   height: number;

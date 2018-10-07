@@ -1,7 +1,6 @@
 // @flow
-import { Drawable } from "./Drawable";
 
-class Validator implements Drawable {
+class Validator {
   id: string;
   index: number;
   assignments: Array<any>;

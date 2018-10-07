@@ -15,7 +15,6 @@ import {
 import { initInformationPanel } from "../panel";
 
 const DURATION = 1000;
-
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -25,9 +24,9 @@ labelRenderer.setSize(window.innerWidth, window.innerHeight);
 labelRenderer.domElement.style.position = "absolute";
 labelRenderer.domElement.style.top = 0;
 document.body.appendChild(labelRenderer.domElement);
-
 const root = document.createElement("div");
 document.body.appendChild(root);
+
 const store = initInformationPanel(root);
 
 const camera = new THREE.PerspectiveCamera(
@@ -77,11 +76,9 @@ const addCube = ({ id, x, y, z, color, val, opacity }: Node) => {
   blocks.push(block);
 
   const labelDiv = document.createElement("div");
-  labelDiv.className = "label";
+  labelDiv.className = "label-hide";
   labelDiv.textContent = id;
-  labelDiv.style.color = "white";
-  labelDiv.style.marginTop = "-1em";
-  labelDiv.style.fontSize = "0.7em";
+  labelDiv.id = block.uuid;
   const label = new THREE.CSS2DObject(labelDiv);
   label.position.set(0, -0.25, 0.5);
   block.add(label);
@@ -322,6 +319,20 @@ const drawLinks = () => {
         );
       }
     }
+    if (type === "shard") {
+      const sourceCube = shardCubes.find(c => c.name === source);
+      const targetCube = shardCubes.find(c => c.name === target);
+      if (sourceCube != null && targetCube != null) {
+        addArrow(
+          id,
+          sourceCube,
+          targetCube,
+          new THREE.Vector3(0, 0, -0.5),
+          "#00ff00",
+          1
+        );
+      }
+    }
   });
 };
 
@@ -349,6 +360,7 @@ animate();
 let count = 0;
 let timer = setInterval(() => {
   beaconChain.proposeBlock();
+  shards.forEach(s => s.proposeBlock());
   render();
   count++;
   if (count > 10) {
@@ -362,8 +374,11 @@ global.light = light;
 global.validatorTweenGroup = validatorTweenGroup;
 global.beaconCubes = beaconCubes;
 global.THREE = THREE;
+
 const raycaster = new THREE.Raycaster();
-window.addEventListener("mousedown", e => {
+let activeLabelId = null
+window.addEventListener("mousemove", e => {
+  if(e.buttons > 0) return;
   if (e.target === labelRenderer.domElement) {
     const mouse = new THREE.Vector2();
     mouse.x = (e.clientX / renderer.domElement.clientWidth) * 2 - 1;
@@ -383,6 +398,21 @@ window.addEventListener("mousedown", e => {
       if (target.userData.type === "beaconBlock") {
         new TWEEN.Tween(controls.target).to(target.position, 500).start();
       }
+
+
+      if (activeLabelId != null) {
+        toggleLabel(activeLabelId)
+        activeLabelId = null
+      }
+      toggleLabel(target.uuid);
     }
   }
 });
+
+const toggleLabel = (id) => {
+  const label = document.getElementById(id);
+  if ( label == null ) return;
+  label.classList.toggle("label-hide");
+  label.classList.toggle("label-show");
+  activeLabelId = label.id;
+};
