@@ -376,9 +376,9 @@ global.beaconCubes = beaconCubes;
 global.THREE = THREE;
 
 const raycaster = new THREE.Raycaster();
-let activeLabelId = null
+let activeLabelId = null;
 window.addEventListener("mousemove", e => {
-  if(e.buttons > 0) return;
+  if (e.buttons > 0) return;
   if (e.target === labelRenderer.domElement) {
     const mouse = new THREE.Vector2();
     mouse.x = (e.clientX / renderer.domElement.clientWidth) * 2 - 1;
@@ -399,19 +399,18 @@ window.addEventListener("mousemove", e => {
         new TWEEN.Tween(controls.target).to(target.position, 500).start();
       }
 
-
       if (activeLabelId != null) {
-        toggleLabel(activeLabelId)
-        activeLabelId = null
+        toggleLabel(activeLabelId);
+        activeLabelId = null;
       }
       toggleLabel(target.uuid);
     }
   }
 });
 
-const toggleLabel = (id) => {
+const toggleLabel = id => {
   const label = document.getElementById(id);
-  if ( label == null ) return;
+  if (label == null) return;
   label.classList.toggle("label-hide");
   label.classList.toggle("label-show");
   activeLabelId = label.id;
