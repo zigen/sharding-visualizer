@@ -1,6 +1,6 @@
 // @flow
 
-import { Validator, CYCLE_LENGTH, SLOT_HEIGHT } from "./index";
+import { Attestation, Validator, CYCLE_LENGTH, SLOT_HEIGHT } from "./index";
 
 class BeaconBlock {
   activeState: ActiveState;
@@ -46,6 +46,8 @@ class BeaconBlock {
       opacity: this.isProposed ? 0.8 : 0.2,
       type: "beacon",
       proposer,
+      activeState: this.activeState,
+      crystallizedState: this.crystallizedState,
     };
   }
 }
@@ -53,6 +55,9 @@ class BeaconBlock {
 class ActiveState {
   pendingAttestations: Array<Attestation>;
   recentBlockHashes: Array<any>;
+  constructor(attestations: Array<Attestation>) {
+    this.pendingAttestations = attestations;
+  }
 }
 
 class CrystallizedState {
@@ -73,8 +78,4 @@ class CrystallizedState {
   }
 }
 
-class Attestation {}
-
-class ValidatorRecord {}
-
-export { BeaconBlock, Attestation, CrystallizedState, ActiveState };
+export { BeaconBlock, CrystallizedState, ActiveState };

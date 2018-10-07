@@ -1,10 +1,12 @@
 // @flow
 
 import {
+  Attestation,
+  ActiveState,
   Validator,
   CrystallizedState,
   BeaconBlock,
-  Shard,
+  ShardChain,
   CYCLE_LENGTH,
   SLOT_HEIGHT,
 } from "./index";
@@ -13,11 +15,16 @@ class BeaconChain {
   validators: Array<Validator>;
   id: string;
   blocks: Array<BeaconBlock>;
-  shards: Array<Shard>;
+  shards: Array<ShardChain>;
   slot: number;
   cycle: number;
+  pendingAttestations: Array<Attestation>;
 
-  constructor(id: string, validators: Array<Validator>, shards: Array<Shard>) {
+  constructor(
+    id: string,
+    validators: Array<Validator>,
+    shards: Array<ShardChain>
+  ) {
     this.id = id;
     this.validators = validators;
     const genesis = new BeaconBlock(this.id + "-genesis", 0);
@@ -25,6 +32,7 @@ class BeaconChain {
     this.shards = shards;
     this.slot = 0;
     this.cycle = 0;
+    this.pendingAttestations = [];
   }
 
   stateRecalc(): BeaconBlock {
@@ -69,6 +77,8 @@ class BeaconChain {
     } else {
       block.crystallizedState = lastBlock.crystallizedState;
     }
+    block.activeState = new ActiveState(this.pendingAttestations);
+    this.pendingAttestations = [];
     block.proposer = this.getProposer(this.slot);
     this.slot = nextSlot;
     this.cycle = nextCycle;
@@ -158,6 +168,10 @@ class BeaconChain {
     return shardNodes
       .concat(blockNodes)
       .concat(this.validators.map((v, i) => v.getNode(ctx, i)));
+  }
+
+  receiveAttestation(attestation: Attestation) {
+    this.pendingAttestations.push(attestation);
   }
 
   getLinks() {

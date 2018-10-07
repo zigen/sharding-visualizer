@@ -14,7 +14,7 @@ class ShardBlock {
   getNode(ctx: any, index: number, base: number) {
     return {
       id: this.id,
-      name: "Shard",
+      name: "ShardChain",
       val: 1.5,
       z: (1 + this.height) * SLOT_HEIGHT,
       x: ctx.x,

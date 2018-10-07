@@ -6,10 +6,9 @@ import "../node_modules/three/examples/js/renderers/Projector";
 import {
   BeaconChain,
   Validator,
-  Shard,
-  SHARD_COUNT,
+  ShardService,
   SLOT_HEIGHT,
-  VALIDATOR_COUNT,
+  ValidatorService,
 } from "../core";
 
 import { initInformationPanel } from "../panel";
@@ -124,16 +123,15 @@ const addArrow = (
   scene.add(arrow);
 };
 
-const validators: Array<Validator> = [];
-const shards: Array<Shard> = [];
-for (let i = 0; i < VALIDATOR_COUNT; i++) {
-  validators.push(new Validator(i));
-}
-for (let i = 0; i < SHARD_COUNT; i++) {
-  shards.push(new Shard(`shard-${i}`, i));
-}
+const shardService = new ShardService();
+const validatorService = new ValidatorService(shardService);
 
-const beaconChain = new BeaconChain("beacon-chain", validators, shards);
+const beaconChain = new BeaconChain(
+  "beacon-chain",
+  validatorService.validators,
+  shardService.shards
+);
+validatorService.setBeacon(beaconChain);
 beaconChain.stateRecalc();
 
 let nodes = [];
@@ -248,6 +246,24 @@ const drawNodes = () => {
         height: n.height,
         proposer: n.proposer,
       };
+      const { activeState } = n;
+      if (activeState != null) {
+        activeState.pendingAttestations.forEach(a => {
+          const attester = validatorCubes.find(
+            v => v.name === a.attesterId && v.userData.slot === a.slot
+          );
+          if (attester != null) {
+            const pos = cube.userData.nextPos;
+            addArrow(
+              `attestation-${a.attesterId}@${a.slot}`,
+              Object.assign({}, attester.position),
+              pos,
+              null,
+              "white"
+            );
+          }
+        });
+      }
     }
     if (n.type === "shard") {
       shardCubes.push(cube);
@@ -360,7 +376,8 @@ animate();
 let count = 0;
 let timer = setInterval(() => {
   beaconChain.proposeBlock();
-  shards.forEach(s => s.proposeBlock());
+  shardService.proposeAllShardsBlocks();
+  validatorService.sendAttestationForCurrentSlot();
   render();
   count++;
   if (count > 10) {

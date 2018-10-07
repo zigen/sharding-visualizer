@@ -2,7 +2,7 @@
 
 import { ShardBlock, SHARD_TO_BEACON_DISTANCE, SLOT_HEIGHT } from "./";
 
-class Shard {
+class ShardChain {
   id: string;
   index: number;
   blocks: Array<ShardBlock>;
@@ -43,7 +43,7 @@ class Shard {
     return [
       {
         id: this.id,
-        name: "Shard",
+        name: "ShardChain",
         val: 1.5,
         z: 0,
         x,
@@ -64,4 +64,4 @@ class Shard {
   }
 }
 
-export { Shard };
+export { ShardChain };

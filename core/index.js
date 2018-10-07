@@ -1,16 +1,14 @@
 // @flow
-import {
-  BeaconBlock,
-  Attestation,
-  ActiveState,
-  CrystallizedState,
-} from "./BeaconBlock";
+import { BeaconBlock, ActiveState, CrystallizedState } from "./BeaconBlock";
+import { Attestation } from "./Attestation";
 import { BeaconChain } from "./BeaconChain";
 import { Validator } from "./Validator";
+import { ValidatorService } from "./ValidatorService";
 import { PoWChain } from "./PoWChain";
 import { PoWBlock } from "./PoWBlock";
-import { Shard } from "./Shard";
+import { ShardChain } from "./ShardChain";
 import { ShardBlock } from "./ShardBlock";
+import { ShardService } from "./ShardService";
 
 export const CYCLE_LENGTH = 4; // 64slots
 export const SHARD_COUNT = 6;
@@ -25,11 +23,13 @@ export {
   BeaconBlock,
   BeaconChain,
   Validator,
+  ValidatorService,
   PoWChain,
   PoWBlock,
   ActiveState,
   CrystallizedState,
   Attestation,
-  Shard,
+  ShardChain,
   ShardBlock,
+  ShardService,
 };
