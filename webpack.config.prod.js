@@ -28,7 +28,9 @@ module.exports = {
     ],
   },
   plugins: [
-    new HtmlWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      title: "Shasper simulation",
+    }),
     new webpack.ProvidePlugin({
       THREE: "three",
     }),
