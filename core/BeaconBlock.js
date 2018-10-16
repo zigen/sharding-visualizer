@@ -10,13 +10,20 @@ class BeaconBlock {
   isGenesis: boolean;
   proposer: Validator;
   parent: ?BeaconBlock;
+  powChainReference: string;
 
-  constructor(id: string, height: number, parent: ?BeaconBlock = null) {
+  constructor(
+    id: string,
+    height: number,
+    powRef: string,
+    parent: ?BeaconBlock = null
+  ) {
     this.id = id;
     this.height = height;
     this.isGenesis = height === 0;
     this.crystallizedState = null;
     this.parent = parent;
+    this.powChainReference = powRef;
   }
 
   get isProposed() {
@@ -48,6 +55,7 @@ class BeaconBlock {
       proposer,
       activeState: this.activeState,
       crystallizedState: this.crystallizedState,
+      powChainReference: this.powChainReference,
     };
   }
 }

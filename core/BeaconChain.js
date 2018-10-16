@@ -19,17 +19,20 @@ class BeaconChain {
   slot: number;
   cycle: number;
   pendingAttestations: Array<Attestation>;
+  mainChain: PoWChain;
 
   constructor(
     id: string,
     validators: Array<Validator>,
-    shards: Array<ShardChain>
+    shards: Array<ShardChain>,
+    mainChain: PoWChain
   ) {
     this.id = id;
     this.validators = validators;
     const genesis = new BeaconBlock(this.id + "-genesis", 0);
     this.blocks = [genesis];
     this.shards = shards;
+    this.mainChain = mainChain;
     this.slot = 0;
     this.cycle = 0;
     this.pendingAttestations = [];
@@ -69,6 +72,7 @@ class BeaconChain {
     const block = new BeaconBlock(
       this.id + "-" + this.slot,
       nextSlot,
+      this.mainChain.latestBlock.id,
       lastBlock
     );
     this.blocks.push(block);

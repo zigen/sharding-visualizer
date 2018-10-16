@@ -4,16 +4,19 @@ import "../node_modules/three/examples/js/controls/OrbitControls";
 import "../node_modules/three/examples/js/renderers/CSS2DRenderer";
 import "../node_modules/three/examples/js/renderers/Projector";
 import {
+  PoWChain,
+  PoWBlock,
   BeaconChain,
   Validator,
   ShardService,
   SLOT_HEIGHT,
   ValidatorService,
+  SLOT_DURATION,
 } from "../core";
 
 import { initInformationPanel } from "../panel";
 
-const DURATION = 1000;
+const DURATION = SLOT_DURATION;
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -124,27 +127,38 @@ const addArrow = (
 };
 
 const shardService = new ShardService();
+const mainChain = new PoWChain();
 const validatorService = new ValidatorService(shardService);
 
 const beaconChain = new BeaconChain(
   "beacon-chain",
   validatorService.validators,
-  shardService.shards
+  shardService.shards,
+  mainChain
 );
 validatorService.setBeacon(beaconChain);
 beaconChain.stateRecalc();
 
+const nextPoWBlock = () => {
+  setTimeout(() => {
+    const block = new PoWBlock(mainChain.height + 1, mainChain.latestBlock);
+    mainChain.processBlock(block);
+    return nextPoWBlock();
+  }, (Math.random() * 15 + 15) * 100);
+};
+nextPoWBlock();
 let nodes = [];
 let links = [];
 let shardCubes = [];
 let validatorCubes = [];
+let powCubes = [];
 let beaconCubes = [];
 let arrows = [];
 const validatorTweenGroup = new TWEEN.Group();
 const beaconTweenGroup = new TWEEN.Group();
 
 const updateNodes = () => {
-  const allNodes = beaconChain.getNodes();
+  const allNodes = mainChain.getNodes().concat(beaconChain.getNodes());
   const newNodes = allNodes.filter(
     n1 => nodes.find(n2 => n2.id === n1.id) == null
   );
@@ -221,6 +235,9 @@ const drawNodes = () => {
       }
     }
     const cube = addCube(n);
+    if (n.type === "pow") {
+      powCubes.push(cube);
+    }
     if (n.type === "beacon") {
       if (n.proposer != null) {
         const pos = {
@@ -245,7 +262,10 @@ const drawNodes = () => {
         id: cube.name,
         height: n.height,
         proposer: n.proposer,
+        powChainReference: n.powChainReference,
       };
+
+      // attestation signed data to beacon from validator
       const { activeState } = n;
       if (activeState != null) {
         activeState.pendingAttestations.forEach(a => {
@@ -263,6 +283,18 @@ const drawNodes = () => {
             );
           }
         });
+      }
+
+      // ref to mainChain
+      const powBlock = powCubes.find(c => c.name === n.powChainReference);
+      if (powBlock != null) {
+        addArrow(
+          `pow-chain-ref-${n.id}`,
+          cube.userData.nextPos,
+          powBlock.position,
+          null,
+          "green"
+        );
       }
     }
     if (n.type === "shard") {

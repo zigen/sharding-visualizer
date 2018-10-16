@@ -8,13 +8,15 @@ type Props = {
 };
 class BeaconBlock extends React.Component<Props> {
   render() {
-    const { slot, type, proposer, id } = this.props.node;
+    console.log(this.props.node);
+    const { slot, type, proposer, id, powChainReference } = this.props.node;
     return (
       <div>
         <div>type: {type}</div>
         <div>id: {id}</div>
         <div>slot: {slot}</div>
         <div>proposer: {proposer != null ? proposer.id : "genesis"}</div>
+        <div>pow chain ref: {powChainReference}</div>
       </div>
     );
   }

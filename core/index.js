@@ -13,7 +13,7 @@ import { ShardService } from "./ShardService";
 export const CYCLE_LENGTH = 4; // 64slots
 export const SHARD_COUNT = 6;
 export const VALIDATOR_COUNT = 48;
-export const SLOT_DURATION = 8000; // msec
+export const SLOT_DURATION = 1000; // 8000msec
 export const MIN_COMMITTEE_SIZE = 128;
 export const MIN_DYNASTY_LENGTH = 256; // slots
 export const SHARD_TO_BEACON_DISTANCE = 6;
